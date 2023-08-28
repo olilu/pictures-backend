@@ -40,8 +40,18 @@ app.get('/search/:query', async (req, res ) => {
           Authorization: apikey,
       },
   });
-  const Lists=await data.json();
-  res.json({ Lists });
+  if (!data.ok) {
+    res.status(404).json({ message: `Query to pexels.com failed: ${data.status} ${data.statusText}` });
+    return;
+  }
+  const rawPictures=await data.json();
+  const pictures=rawPictures.photos.map((picture) => ({
+    id: picture.id,
+    url: picture.src['medium'],
+    alt: picture.alt,
+    photographer: picture.photographer,
+  }));
+  res.json({ pictures });
 });
 
 app.post('/lists', async (req, res) => {
