@@ -14,7 +14,7 @@ app.use((req, res, next) => {
   // Attach CORS headers
   // Required when using a detached backend (that runs on a different domain)
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
@@ -87,7 +87,6 @@ app.post('/lists/:id/pictures', async (req, res) => {
   const pictureData = req.body;
   const newPicture = {
     ...pictureData,
-    id: Math.random().toString(),
   };
   const updatedLists = existingLists.map((list) => {
     if (list.id === req.params.id) {
@@ -100,6 +99,30 @@ app.post('/lists/:id/pictures', async (req, res) => {
   });
   await storeLists(updatedLists);
   res.status(201).json({ message: 'Stored new picture.', picture: newPicture });
+});
+
+app.delete('/lists/:id/pictures', async (req, res) => {
+  const existingLists = await getStoredLists();
+  const list = existingLists.find((list) => list.id === req.params.id);
+  if (!list) {
+    res.status(404).json({ message: 'List not found.' });
+    return;
+  }
+  const pictureData = req.body;
+  const toDelete = {
+    ...pictureData,
+  };
+  const updatedLists = existingLists.map((list) => {
+    if (list.id === req.params.id) {
+      return {
+        ...list,
+        pictures: list.pictures.filter((picture) => picture.id !== toDelete.id),
+      };
+    }
+    return list;
+  });
+  await storeLists(updatedLists);
+  res.status(201).json({ message: 'Deleted picture.', picture: toDelete });
 });
 
 app.listen(8080);
